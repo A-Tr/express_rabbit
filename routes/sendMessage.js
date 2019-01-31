@@ -1,11 +1,13 @@
-let express = require('express')
-let router = express.Router()
-let sendMessage = require('../handlers/sendMessage')
-/* GET users listing. */
-router.post('/message', function(req, res, next) {
-  let body = req.body
-  
-	res.send('respond with a resource')
+const express = require('express')
+const router = express.Router()
+const logger = require('../logger/logger')
+const sendMessage = require('../handlers/sendMessage')
+router.post('/send', async function(req, res, next) {
+  const traceId = req.headers.id
+  logger.info('Received request', {traceId})
+  const { title, message } = req.body    
+  await sendMessage({title, message}, {traceId})
+  res.status(200).send({ok: 'OK'})
 })
 
 module.exports = router

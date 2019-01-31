@@ -1,38 +1,21 @@
-const amqp = require('amqp')
+const open = require('amqplib').connect('amqp://localhost:5672')
 const logger = require('../logger/logger')
 
 module.exports = () => {
-
-	const connection = amqp.createConnection({ host: 'localhost'
-		, port: 5672
-		, login: 'guest'
-		, password: 'guest'
-		, connectionTimeout: 10000
-		, authMechanism: 'AMQPLAIN'
-		, vhost: '/'
-		, noDelay: true
-		, ssl: { enabled : false
-		}
-	})
-
-	connection.on('error', e => {
-		logger.error(e, {traceId: '1'})
-	})
-
-	connection.on('ready', function () {
-		logger.info('Connection to Rabbit Ready', {traceId: '1'})
-		// Use the default 'amq.topic' exchange
-		connection.queue('Cola de eventos', function (q) {
-		  logger.info(`Connection to Queue ${q.name}`, {traceId: '1'})
-			// Catch all messages
-			q.bind('#')
-  
-			// Receive messages
-			q.subscribe(function (message) {
-				// Print messages to stdout
-				logger.info(`Message received: ${message}`, {traceId: '1'})
-			})
-		})
-	})
-	return connection
+  open
+    .then((conn) => conn.createChannel())
+    .then(ch => ch.assertQueue('go-to-node')
+      .then(function(ok) {
+        logger.info(`Channel assertion: ${JSON.stringify(ok)}`, {traceId: '1'})
+        return ch.consume('go-to-node', msg => {
+          if (msg !== null) {
+            logger.info(`Message: ${JSON.stringify(msg.content.toString())}`, {traceId: '1'})
+            ch.ack(msg)
+          }
+        })
+      })
+    ).catch(e => {
+      logger.error(`Error with the consumer ${e}`, '1')
+    })
 }
+
