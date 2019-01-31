@@ -1,9 +1,11 @@
-var express = require('express');
-var router = express.Router();
-
+const express = require('express')
+const router = express.Router()
+const logger = require('../logger/logger')
+const uuid = require('uuid/v4')
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
-});
+	logger.info('Request received', { traceId: req.headers.id })
+	res.send({holi: 'Holli'})
+})
 
-module.exports = router;
+module.exports = router
